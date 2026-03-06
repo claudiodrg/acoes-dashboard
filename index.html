@@ -1,89 +1,161 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Ações Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acompanhamento de Ações</title>
+
 <style>
-body {
-  background:#0a0c10;
-  color:#c8d0e0;
+:root {
+  --bg:#0a0c10;
+  --surface:#111318;
+  --border:#1e2330;
+  --accent:#00e5ff;
+  --green:#00c853;
+  --red:#ff1744;
+  --yellow:#ffd600;
+  --text:#c8d0e0;
+  --text-dim:#5a6478;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
   font-family:Arial, sans-serif;
   padding:40px;
 }
-h1 {
-  color:#00e5ff;
+
+h1{
+  color:var(--accent);
+  margin-bottom:20px;
 }
-table {
-  border-collapse:collapse;
+
+table{
   width:100%;
-  margin-top:20px;
+  border-collapse:collapse;
+  font-size:14px;
 }
-th, td {
-  border:1px solid #1e2330;
-  padding:8px;
+
+th,td{
+  border:1px solid var(--border);
+  padding:10px;
   text-align:center;
 }
-th {
-  background:#111318;
-  color:#00e5ff;
+
+th{
+  background:var(--surface);
+  color:var(--accent);
 }
-.green { color:#00c853; font-weight:bold; }
-.yellow { color:#ffd600; font-weight:bold; }
-.red { color:#ff1744; font-weight:bold; }
+
+.green{color:var(--green);font-weight:bold;}
+.red{color:var(--red);font-weight:bold;}
+.yellow{color:var(--yellow);font-weight:bold;}
+
+.rank{
+  padding:4px 8px;
+  border-radius:4px;
+}
+
+.rank-green{background:rgba(0,200,83,0.15);}
+.rank-red{background:rgba(255,23,68,0.15);}
+.rank-yellow{background:rgba(255,214,0,0.15);}
+
+.legend{
+  margin-top:20px;
+  font-size:13px;
+  color:var(--text-dim);
+}
+
+button{
+  margin-top:20px;
+  padding:8px 16px;
+  border:1px solid var(--accent);
+  background:transparent;
+  color:var(--accent);
+  cursor:pointer;
+}
+button:hover{
+  background:var(--accent);
+  color:black;
+}
 </style>
 </head>
+
 <body>
 
 <h1>📊 Acompanhamento de Ações</h1>
 
-<table id="table">
+<table id="mainTable">
 <thead>
 <tr>
 <th>Ação</th>
 <th>Preço</th>
 <th>Score</th>
+<th>Ranking</th>
 </tr>
 </thead>
 <tbody></tbody>
 </table>
 
+<button onclick="copyTable()">Copiar Tabela</button>
+
+<div class="legend">
+Verde = Compra | Amarelo = Neutro | Vermelho = Venda
+</div>
+
 <script>
+
 const ROWS = [
-  { ticker:'NVDA', preco:182.55, signals:['green','green','yellow','green','green'] },
-  { ticker:'META', preco:653.44, signals:['red','yellow','yellow','red','yellow'] },
-  { ticker:'AAPL', preco:260.60, signals:['yellow','red','yellow','red','yellow'] },
-  { ticker:'TSLA', preco:404.63, signals:['yellow','red','yellow','yellow','yellow'] },
-  { ticker:'AMD', preco:200.46, signals:['green','green','yellow','green','green'] }
+{ ticker:'ESLT', preco:893.50, signals:['green','green','red','green','red','green','green','green','green','green'] },
+{ ticker:'NVDA', preco:182.55, signals:['yellow','red','yellow','red','yellow','yellow','yellow','red','yellow','yellow'] },
+{ ticker:'META', preco:653.44, signals:['yellow','red','yellow','red','yellow','yellow','yellow','red','red','yellow'] },
+{ ticker:'AMD', preco:200.46, signals:['green','green','yellow','green','red','green','green','yellow','green','green'] },
+{ ticker:'AAPL', preco:260.60, signals:['yellow','red','yellow','red','yellow','yellow','yellow','red','yellow','yellow'] }
 ];
 
 function calcScore(signals){
-  let score = 0;
-  signals.forEach(s=>{
-    if(s==='green') score+=1;
-    if(s==='red') score-=1;
-  });
-  return score;
+let score=0;
+signals.forEach(s=>{
+if(s==='green')score++;
+if(s==='red')score--;
+});
+return score;
 }
 
 function render(){
-  const tbody = document.querySelector("#table tbody");
-  tbody.innerHTML="";
-  
-  const sorted = [...ROWS].sort((a,b)=>calcScore(b.signals)-calcScore(a.signals));
-  
-  sorted.forEach(r=>{
-    const tr = document.createElement("tr");
-    const score = calcScore(r.signals);
-    tr.innerHTML = `
-      <td>${r.ticker}</td>
-      <td>$${r.preco}</td>
-      <td class="${score>0?'green':score<0?'red':'yellow'}">${score}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+const tbody=document.querySelector("#mainTable tbody");
+tbody.innerHTML="";
+
+const sorted=[...ROWS].sort((a,b)=>calcScore(b.signals)-calcScore(a.signals));
+
+sorted.forEach((r,index)=>{
+const score=calcScore(r.signals);
+let scoreClass=score>0?'green':score<0?'red':'yellow';
+let rankClass=score>2?'rank-green':score<-2?'rank-red':'rank-yellow';
+
+const tr=document.createElement("tr");
+tr.innerHTML=`
+<td>${r.ticker}</td>
+<td>$${r.preco}</td>
+<td class="${scoreClass}">${score}</td>
+<td class="rank ${rankClass}">#${index+1}</td>
+`;
+tbody.appendChild(tr);
+});
+}
+
+function copyTable(){
+let text="";
+document.querySelectorAll("#mainTable tr").forEach(row=>{
+const cells=Array.from(row.children).map(c=>c.innerText);
+text+=cells.join("\t")+"\n";
+});
+navigator.clipboard.writeText(text);
+alert("Tabela copiada!");
 }
 
 render();
+
 </script>
 
 </body>
