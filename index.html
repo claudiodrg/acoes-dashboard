@@ -1,0 +1,49 @@
+<script>
+/* ── TICKERS ── */
+const TICKERS = [
+  "ESLT","NVDA","META","TSEM","SPY","LLY","AAPL","SLV","AVGO","IBM",
+  "QQQ","IAU","BRK-B","ORCL","ASTS","AMD","TSLA","PLTR","MSFT",
+  "TSM","GOOGL","AMZN","GEV","SNDK","RKLB"
+];
+
+/* ── FETCH LIVE PRICES ── */
+async function fetchPrices() {
+  const symbols = TICKERS.join(",");
+  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    return data.quoteResponse.result.reduce((acc, stock) => {
+      acc[stock.symbol.replace("-", "/")] = stock.regularMarketPrice;
+      return acc;
+    }, {});
+  } catch (err) {
+    console.error("Price fetch failed:", err);
+    return {};
+  }
+}
+
+/* ── UPDATE ROWS WITH LIVE PRICE ── */
+async function updateLivePrices() {
+  const prices = await fetchPrices();
+
+  ROWS.forEach(row => {
+    if (prices[row.ticker]) {
+      row.preco = prices[row.ticker];
+    }
+  });
+
+  const sorted = [...ROWS].sort((a,b) => calcScore(b) - calcScore(a));
+  renderBody(sorted);
+}
+
+/* ── AUTO REFRESH EVERY 60 SECONDS ── */
+setInterval(updateLivePrices, 60000);
+
+/* ── INIT ── */
+(async function initLive() {
+  updateLivePrices();
+})();
+</script>
