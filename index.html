@@ -1,49 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ações Dashboard</title>
+<style>
+body {
+  background:#0a0c10;
+  color:#c8d0e0;
+  font-family:Arial, sans-serif;
+  padding:40px;
+}
+h1 {
+  color:#00e5ff;
+}
+table {
+  border-collapse:collapse;
+  width:100%;
+  margin-top:20px;
+}
+th, td {
+  border:1px solid #1e2330;
+  padding:8px;
+  text-align:center;
+}
+th {
+  background:#111318;
+  color:#00e5ff;
+}
+.green { color:#00c853; font-weight:bold; }
+.yellow { color:#ffd600; font-weight:bold; }
+.red { color:#ff1744; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<h1>📊 Acompanhamento de Ações</h1>
+
+<table id="table">
+<thead>
+<tr>
+<th>Ação</th>
+<th>Preço</th>
+<th>Score</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
 <script>
-/* ── TICKERS ── */
-const TICKERS = [
-  "ESLT","NVDA","META","TSEM","SPY","LLY","AAPL","SLV","AVGO","IBM",
-  "QQQ","IAU","BRK-B","ORCL","ASTS","AMD","TSLA","PLTR","MSFT",
-  "TSM","GOOGL","AMZN","GEV","SNDK","RKLB"
+const ROWS = [
+  { ticker:'NVDA', preco:182.55, signals:['green','green','yellow','green','green'] },
+  { ticker:'META', preco:653.44, signals:['red','yellow','yellow','red','yellow'] },
+  { ticker:'AAPL', preco:260.60, signals:['yellow','red','yellow','red','yellow'] },
+  { ticker:'TSLA', preco:404.63, signals:['yellow','red','yellow','yellow','yellow'] },
+  { ticker:'AMD', preco:200.46, signals:['green','green','yellow','green','green'] }
 ];
 
-/* ── FETCH LIVE PRICES ── */
-async function fetchPrices() {
-  const symbols = TICKERS.join(",");
-  const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbols}`;
-
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-
-    return data.quoteResponse.result.reduce((acc, stock) => {
-      acc[stock.symbol.replace("-", "/")] = stock.regularMarketPrice;
-      return acc;
-    }, {});
-  } catch (err) {
-    console.error("Price fetch failed:", err);
-    return {};
-  }
-}
-
-/* ── UPDATE ROWS WITH LIVE PRICE ── */
-async function updateLivePrices() {
-  const prices = await fetchPrices();
-
-  ROWS.forEach(row => {
-    if (prices[row.ticker]) {
-      row.preco = prices[row.ticker];
-    }
+function calcScore(signals){
+  let score = 0;
+  signals.forEach(s=>{
+    if(s==='green') score+=1;
+    if(s==='red') score-=1;
   });
-
-  const sorted = [...ROWS].sort((a,b) => calcScore(b) - calcScore(a));
-  renderBody(sorted);
+  return score;
 }
 
-/* ── AUTO REFRESH EVERY 60 SECONDS ── */
-setInterval(updateLivePrices, 60000);
+function render(){
+  const tbody = document.querySelector("#table tbody");
+  tbody.innerHTML="";
+  
+  const sorted = [...ROWS].sort((a,b)=>calcScore(b.signals)-calcScore(a.signals));
+  
+  sorted.forEach(r=>{
+    const tr = document.createElement("tr");
+    const score = calcScore(r.signals);
+    tr.innerHTML = `
+      <td>${r.ticker}</td>
+      <td>$${r.preco}</td>
+      <td class="${score>0?'green':score<0?'red':'yellow'}">${score}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
-/* ── INIT ── */
-(async function initLive() {
-  updateLivePrices();
-})();
+render();
 </script>
+
+</body>
+</html>
