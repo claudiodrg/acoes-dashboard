@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+sp500_momentum.csv
+sp500_momentum.html
